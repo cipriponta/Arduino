@@ -27,11 +27,11 @@ const int MAINTAIN_SPEED1 = 255;
 const int MAINTAIN_SPEED2 = 200;
 
 // viraj2
-const int CORNER_SPEED1 = 150;
+const int CORNER_SPEED1 = 255;
 const int CORNER_SPEED2 = 0;
 
 //viraj3
-const int CORNER_SPEED3 = 100;
+const int CORNER_SPEED3 = 255;
 
 void inainte()
 {

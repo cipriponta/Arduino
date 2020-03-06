@@ -1,0 +1,218 @@
+#include <QTRSensors.h>
+
+QTRSensors qtr;
+
+//motor 1 --> de pe stanga
+const int M1_P1 = 11;
+const int M1_P2 = 10;
+
+//motor 2 --> de pe dreapta
+const int M2_P1 = 9;
+const int M2_P2 = 8;
+
+// directie
+const int speed2 = 5;
+const int speed1 = 6;
+
+const uint8_t SensorCount = 6;
+uint16_t sensorValues[SensorCount];
+
+// constante
+
+// inainte
+const int MAX_SPEED = 255;
+
+// viraj1
+const int MAINTAIN_SPEED1 = 255;
+const int MAINTAIN_SPEED2 = 200;
+
+// viraj2
+const int CORNER_SPEED1 = 150;
+const int CORNER_SPEED2 = 0;
+
+//viraj3
+const int CORNER_SPEED3 = 100;
+
+void inainte()
+{
+  
+    analogWrite(speed1,MAX_SPEED);
+    analogWrite(speed2,MAX_SPEED);
+    digitalWrite(M1_P1,HIGH);
+    digitalWrite(M1_P2,LOW);
+    digitalWrite(M2_P1,HIGH);
+    digitalWrite(M2_P2,LOW);
+  
+}
+
+void oprire(){
+    
+    analogWrite(speed1,0);
+    analogWrite(speed2,0);
+    digitalWrite(M1_P1,LOW);
+    digitalWrite(M1_P2,LOW);
+    digitalWrite(M2_P1,LOW);
+    digitalWrite(M2_P2,LOW);
+  
+}
+
+void stanga1(){
+
+    analogWrite(speed1,MAINTAIN_SPEED2);
+    analogWrite(speed2,MAINTAIN_SPEED1);
+    digitalWrite(M1_P1,HIGH);
+    digitalWrite(M1_P2,LOW);
+    digitalWrite(M2_P1,HIGH);
+    digitalWrite(M2_P2,LOW);
+}
+
+void dreapta1()
+{
+
+    analogWrite(speed1,MAINTAIN_SPEED1);
+    analogWrite(speed2,MAINTAIN_SPEED2);
+    digitalWrite(M1_P1,HIGH);
+    digitalWrite(M1_P2,LOW);
+    digitalWrite(M2_P1,HIGH);
+    digitalWrite(M2_P2,LOW);
+}
+
+void stanga2()
+{
+    analogWrite(speed1,CORNER_SPEED2);
+    analogWrite(speed2,CORNER_SPEED1);
+    digitalWrite(M1_P1,HIGH);
+    digitalWrite(M1_P2,LOW);
+    digitalWrite(M2_P1,HIGH);
+    digitalWrite(M2_P2,LOW);
+}
+
+void dreapta2()
+{
+    analogWrite(speed1,CORNER_SPEED1);
+    analogWrite(speed2,CORNER_SPEED2);
+    digitalWrite(M1_P1,HIGH);
+    digitalWrite(M1_P2,LOW);
+    digitalWrite(M2_P1,HIGH);
+    digitalWrite(M2_P2,LOW);
+}
+
+void stanga3()
+{
+    analogWrite(speed1,CORNER_SPEED3);
+    analogWrite(speed2,CORNER_SPEED3);
+    digitalWrite(M1_P1,HIGH);
+    digitalWrite(M1_P2,LOW);
+    digitalWrite(M2_P1,LOW);
+    digitalWrite(M2_P2,HIGH);
+}
+
+void dreapta3()
+{
+    analogWrite(speed1,CORNER_SPEED3);
+    analogWrite(speed2,CORNER_SPEED3);
+    digitalWrite(M1_P1,LOW);
+    digitalWrite(M1_P2,HIGH);
+    digitalWrite(M2_P1,HIGH);
+    digitalWrite(M2_P2,LOW);
+}
+
+void setup()
+{
+  pinMode(M1_P1,OUTPUT);
+  pinMode(M1_P2,OUTPUT);
+  pinMode(M2_P1,OUTPUT);
+  pinMode(M2_P2,OUTPUT);
+  pinMode(speed1,OUTPUT);
+  pinMode(speed2,OUTPUT);
+  
+  
+  // configure the sensors
+  qtr.setTypeRC();
+  qtr.setSensorPins((const uint8_t[]){13, 12, 7, 4, 3 , 2}, SensorCount);
+  qtr.setEmitterPin(2);
+
+  delay(500);
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH); // turn on Arduino's LED to indicate we are in calibration mode
+
+  // 2.5 ms RC read timeout (default) * 10 reads per calibrate() call
+  // = ~25 ms per calibrate() call.
+  // Call calibrate() 400 times to make calibration take about 10 seconds.
+  for (uint16_t i = 0; i < 400; i++)
+  {
+    qtr.calibrate();
+  }
+  digitalWrite(LED_BUILTIN, LOW); // turn off Arduino's LED to indicate we are through with calibration
+
+  // print the calibration minimum values measured when emitters were on
+  Serial.begin(9600);
+  for (uint8_t i = 0; i < SensorCount; i++)
+  {
+    Serial.print(qtr.calibrationOn.minimum[i]);
+    Serial.print(' ');
+  }
+  Serial.println();
+
+  // print the calibration maximum values measured when emitters were on
+  for (uint8_t i = 0; i < SensorCount; i++)
+  {
+    Serial.print(qtr.calibrationOn.maximum[i]);
+    Serial.print(' ');
+  }
+  Serial.println();
+  Serial.println();
+  delay(1000);
+}
+
+void loop()
+{
+  // read calibrated sensor values and obtain a measure of the line position
+  // from 0 to 5000 (for a white line, use readLineWhite() instead)
+  uint16_t position = qtr.readLineBlack(sensorValues);
+
+  // print the sensor values as numbers from 0 to 1000, where 0 means maximum
+  // reflectance and 1000 means minimum reflectance, followed by the line
+  // position
+  for (uint8_t i = 0; i < SensorCount; i++)
+  { 
+    if(sensorValues[i]<=100)
+      Serial.print(0);//alb
+      else
+      Serial.print(1);//negru
+    Serial.print('\t');
+  }
+  Serial.println();
+  //delay(250);
+
+  if(sensorValues[0]<100&&sensorValues[1]<100&&sensorValues[2]>=100&&sensorValues[3]>=100&&sensorValues[4]<100&&sensorValues[5]<100)
+  {
+    inainte();
+  }
+  else if(sensorValues[0]<100&&sensorValues[1]>=100&&sensorValues[2]>=100&&sensorValues[3]<100&&sensorValues[4]<100&&sensorValues[5]<100)
+  {
+    dreapta1();
+  }
+  else if(sensorValues[0]<100&&sensorValues[1]<100&&sensorValues[2]<100&&sensorValues[3]>=100&&sensorValues[4]>=100&&sensorValues[5]<100)
+  {
+    stanga1();
+  }
+  else if(sensorValues[0]>=100&&sensorValues[1]>=100&&sensorValues[2]<100&&sensorValues[3]<100&&sensorValues[4]<100&&sensorValues[5]<100)
+  {
+    dreapta2();
+  }
+  else if(sensorValues[0]<100&&sensorValues[1]<100&&sensorValues[2]<100&&sensorValues[3]<100&&sensorValues[4]>=100&&sensorValues[5]>=100)
+  {
+    stanga2();
+  }
+  else if(sensorValues[0]>=100&&sensorValues[1]>=100&&sensorValues[2]>=100&&sensorValues[3]<100&&sensorValues[4]<100&&sensorValues[5]<100)
+  {
+    dreapta3();
+  }
+  else if(sensorValues[0]<100&&sensorValues[1]<100&&sensorValues[2]<100&&sensorValues[3]>=100&&sensorValues[4]>=100&&sensorValues[5]>=100)
+  {
+    stanga3();
+  }
+  //else
+   //   oprire();
+}
